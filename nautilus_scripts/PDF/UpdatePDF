@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Define log file
+LOGFILE=~/update_pdf.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Start of script log
+log "Script started"
+
+# Check if no files are selected
+if [ $# -eq 0 ]; then
+  zenity --error --text="No files selected."
+  log "No files selected."
+  exit 1
+fi
+
+# Collect the names of the selected files with their .pdf extension
+file_names=""
+for file in "$@"; do
+  if [[ "$file" == *.pdf ]]; then
+    abs_file=$(get_absolute_path "$file")
+    base_name=$(basename "$file")
+    if [ -z "$file_names" ]; then
+      # file_names="$base_name"
+      file_names="$abs_file"
+    else
+      file_names="$file_names,$abs_file"
+      # file_names="$file_names,$base_name"
+    fi
+  else
+    zenity --error --text="Selected file is not a PDF: $file"
+    log "Selected file is not a PDF: $file"
+    exit 1
+  fi
+done
+
+# Prompt for the first parameter
+param1=$(zenity --entry --title="Parameter Input" --text="Enter the name of the PDF to create without its extension")
+if [ $? -ne 0 ]; then
+  log "First parameter input cancelled"
+  zenity --error --text="Operation cancelled."
+  exit 1
+fi
+
+
+# Log the parameters and the file names
+log "Processing PDF files to create the new one with the name $param1"
+
+log "pwd = $PWD"
+log "n = $param1"
+log "f = $file_names"
+
+# Launch the Python script with the file names and parameters
+python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts//PDF/update_PDF_file.py -n "$param1" -f "$file_names" >> "$LOGFILE" 2>&1
+
+# End of script log
+log "Script ended"

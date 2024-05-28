@@ -1,0 +1,47 @@
+#!/bin/bash
+
+LOGFILE=~/convert_pdf_to_image.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Define valid image file extensions
+valid_extensions=("pdf")
+
+# Function to check if a file has a valid image extension
+is_pdf_file() {
+  local file="$1"
+  local extension="${file##*.}"
+  for valid_extension in "${valid_extensions[@]}"; do
+    if [[ "$extension" == "$valid_extension" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Start of script log
+log "Script started"
+
+
+# Loop through all selected files
+for file in "$@"; do
+  if is_pdf_file "$file"; then
+    # Launch the Python script with the file path as an argument
+    abs_file=$(get_absolute_path "$file")
+    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/PDF/pdfToImage.py -fp "$abs_file" >> "$LOGFILE" 2>&1
+  else
+    # Show a popup message if the file is not a valid image file
+    zenity --error --text="File $file is not a valid PDF file." >> "$LOGFILE" 2>&1
+  fi
+done
+
+# End of script log
+log "Script ended"

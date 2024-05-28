@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Define log file
+LOGFILE=~/create_short_video_file.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Start of script log
+log "Script started"
+
+# Loop through all selected files
+for file in "$@"; do
+  abs_file=$(get_absolute_path "$file")
+  
+  # Prompt for the first parameter
+  param1=$(zenity --entry --title="Enter the Short video name" --text="Example: extrat_01")
+  
+  if [ $? -ne 0 ]; then
+    log "Short video name input cancelled"
+    zenity --error --text="Operation cancelled."
+    exit 1
+  fi
+
+  # Prompt for the second parameter
+  param2=$(zenity --entry --title="Enter the starting timecode in minutes" --text="Example: 6min23s --> 6.23")
+
+  if [ $? -ne 0 ]; then
+    log "Starting timecode input cancelled"
+    zenity --error --text="Operation cancelled."
+    exit 1
+  fi
+
+# Prompt for the third parameter
+  param3=$(zenity --entry --title="Enter the ending timecode in minutes" --text="Example: 6min23s --> 6.23")
+
+  if [ $? -ne 0 ]; then
+    log "Ending timecode input cancelled"
+    zenity --error --text="Operation cancelled."
+    exit 1
+  fi
+
+  # Log the parameters and the file
+  log "Processing video file: $abs_file with parameters: $param1, $param2 & $param3"
+
+  # Launch the Python script with the file path and parameters
+  python3 /home/olivier/Documents/Projects/Fuerte/modules/Videos/CutVideos.py -v "$abs_file" -n "$param1" -s "$param2" -e "$param3" >> "$LOGFILE" 2>&1
+done
+
+# End of script log
+log "Script ended"

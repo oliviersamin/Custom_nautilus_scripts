@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Define log file
+LOGFILE=~/translate_audio_file.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Start of script log
+log "Script started"
+(
+  # Progress bar
+  echo "00"
+  echo "# Starting the virtual env corresponding..."
+  # activating virtual env corresponding to this script
+  source ~/Documents/Projects/LLM/audio/env/bin/activate
+
+
+  # Simulate processing step 2
+  echo "10"
+  echo "# Starting the translation process, it might take a few minutes..."
+  # Loop through all selected files
+  for file in "$@"; do
+    abs_file=$(get_absolute_path "$file")
+
+    # Log the parameters and the file
+    log "Translating audio file $abs_file "
+
+    # Launch the Python script with the file path and parameters
+    python3 ~/Documents/Projects/LLM/audio/scripts.py -a translation -f "$abs_file" >> "$LOGFILE" 2>&1
+  done
+
+  echo "100"
+  echo "# Translation done for $file"
+) | zenity --progress --title="Translation Audio File" --text="Initializing..." --percentage=0 --auto-close --no-cancel
+
+log "Script ended"

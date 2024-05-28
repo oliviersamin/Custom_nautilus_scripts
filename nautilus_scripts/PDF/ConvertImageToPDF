@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Define valid image file extensions
+valid_extensions=("jpg" "jpeg" "png")
+
+# Function to check if a file has a valid image extension
+is_image_file() {
+  local file="$1"
+  local extension="${file##*.}"
+  for valid_extension in "${valid_extensions[@]}"; do
+    if [[ "$extension" == "$valid_extension" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Loop through all selected files
+for file in "$@"; do
+  if is_image_file "$file"; then
+    abs_file=$(get_absolute_path "$file")
+    # Launch the Python script with the file path as an argument
+    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/PDF/ImageToPDF.py -i "$abs_file"
+  else
+    # Show a popup message if the file is not a valid image file
+    zenity --error --text="File $file is not a valid image file."
+  fi
+done
