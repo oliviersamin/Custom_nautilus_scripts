@@ -59,7 +59,6 @@ class CutVideo:
                   "Correct example: 4.23\n"
                   "############# ERROR ####################\n")
 
-
     def __get_directory_and_video_name(self, video):
         """ image is an attribute of Ticket in models.py of base_app """
         video_name = video[::-1][:video[::-1].find('/')]

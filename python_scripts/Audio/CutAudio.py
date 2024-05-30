@@ -5,6 +5,7 @@ original audio file.
 
 import argparse
 from pydub import AudioSegment
+import os
 
 
 class CutAudioInSeveralParts:
@@ -14,6 +15,7 @@ class CutAudioInSeveralParts:
         self.second_part_path = ""
         self.time_to_cut = ""
         self.path = ""
+        self.base_path = ""
         self.extension = ""
         self.__parse_arguments()
         self.audio_file = AudioSegment.from_file(self.audio_path)
@@ -29,7 +31,47 @@ class CutAudioInSeveralParts:
         self.args = parser.parse_args()
         self.audio_path = self.args.audio
         self.time_to_cut = self.args.time
+        self.times = []
 
+    def __set_times_and_labels(self):
+        """
+        the time input can be of two types:
+        1. it just give a list of times: 3.12,6.45,10.34...
+        2. it give time and also the label of the extract, they are separated by ":". Example: 3.12,6.45:test_label,10.32,12.45:test2_label....
+        the last label will always be used for the cut before the last one.
+        If you want to add a label for the last cut, in your time list you will have to add the symbol |
+        Check out the example:
+          3.12,6.45:test_label,10.32,12.45:test2_label, 30.45:before_last_label|lastlabel
+        :return: a dictionnary with label and time for each input. If the label is empty, just use the default label value, otherwize replace it
+        """
+        input = self.time_to_cut.split(",")
+        output = []
+        for data in input:
+            if ":" in data:
+                output.append({"label": data.split(":")[1], "time": self.__convert_time(data.split(":")[0])})
+            else:
+                output.append({"label": "", "time": self.__convert_time(data.split(":")[0])})
+        return output
+
+    def __convert_time(self, time):
+        """entry : a string representing a time written as follow
+        7.02 = 7 minutes and 2 secondes
+        2.36 = 2 minutes and 36 secondes
+        3.75 does not exist because more than 59 secondes is a minute more --> raise an error
+        Final result in milliseconds because this is how it is managed by the AudioSegment instance
+        """
+        minutes = int(float(time))
+        seconds = round(float(time) - minutes, 2)*100
+        if seconds <= 59:
+            return int(minutes * 60 + seconds) * 1000
+        else:
+            print("\n############# ERROR ####################\n"
+                  "The value of seconds cannot be more than 59\n"
+                  "Incorrect example: 3.76\n"
+                  "Correct example: 4.23\n"
+                  "############# ERROR ####################\n")
+
+        return (minutes * 60 + seconds) * 1000
 
     def __create_parts(self):
         """
@@ -38,40 +80,64 @@ class CutAudioInSeveralParts:
         Details of this dictionnary: {"file": "", "file_absolute_path": ""}
         """
         # Get all the times as integer and sorted
-        times = self.time_to_cut.split(",")
-        times_int = []
-        for time in times:
-            times_int.append(int(time)*1000)
-        times_int.sort()
-        # create the dictionary
-        if len(times_int) > 1:
-            for index, time in enumerate(times_int):
-                path = self.path + "_extract_" + str(index + 1) + "." + self.extension
+        self.times = self.__set_times_and_labels()
+        self.times = sorted(self.times, key=lambda x: x["time"])
+        print("-" * 200)
+        print(self.times)
+        if len(self.times) > 1:
+            for index, time in enumerate(self.times):
+                print("." * 200)
+                print(index, time)
+                if not time["label"]:
+                    path = os.path.join(self.path, "_extract_", str(index + 1) + "." + self.extension)
+                else:
+                    path = os.path.join(self.base_path, time["label"] + "." + self.extension)
                 file = None
+                print(path)
                 if index == 0:
-                    file = self.audio_file[:time]
-                elif index < len(times_int) - 1:
-                    time_past = times_int[index-1]
-                    file = self.audio_file[time_past:time]
-                elif index == len(times_int) - 1:
+                    file = self.audio_file[:time["time"]]
+                elif index < len(self.times) - 1:
+                    time_past = self.times[index-1]["time"]
+                    file = self.audio_file[time_past:time["time"]]
+                elif index == len(self.times) - 1:
                     # the last segment creates 2 parts to get the whole file
-                    time_past = times_int[index-1]
-                    file = self.audio_file[time_past:time]
-                    self.parts.append({"file": file, "file_absolute_path": path})
-                    file = self.audio_file[time:]
-                    path = self.path + "_extract_" + str(index + 2) + "." + self.extension
+                    path1 = ""
+                    path2 = ""
+                    if "|" in path:
+                        path1 = path[:path.find("|")] + "." + self.extension
+                        label = path[path.find("|") + 1:]
+                        path2 = os.path.join(self.base_path, label)
+                    time_past = self.times[index-1]["time"]
+                    file = self.audio_file[time_past:time["time"]]
+                    self.parts.append({"file": file, "file_absolute_path": path1 or path})
+                    file = self.audio_file[time["time"]:]
+                    path = path2 or self.path + "_extract_" + str(index + 2) + "." + self.extension
                 self.parts.append({"file": file, "file_absolute_path": path})
         else:
-            path = self.path + "_01." + self.extension
-            self.parts.append({"file": self.audio_file[:times_int[0]], "file_absolute_path": path})
-            path = self.path + "_02." + self.extension
-            self.parts.append({"file": self.audio_file[times_int[0]:], "file_absolute_path": path})
+            if self.times[0]["label"]:
+                if "|" in self.times[0]["label"]:
+                    label = self.times[0]["label"]
+                    path1 = os.path.join(self.base_path, label.split("|")[0] + "." + self.extension)
+                    self.parts.append({"file": self.audio_file[:self.times[0]["time"]], "file_absolute_path": path1})
+                    path2 = os.path.join(self.base_path, label.split("|")[1] + "." + self.extension)
+                    self.parts.append({"file": self.audio_file[self.times[0]["time"]:], "file_absolute_path": path2})
+                else:
+                    path = os.path.join(self.base_path, self.times[0]["label"] + "." + self.extension)
+                    self.parts.append({"file": self.audio_file[:self.times[0]["time"]], "file_absolute_path": path})
+                    path = self.path + "_02." + self.extension
+                    self.parts.append({"file": self.audio_file[self.times[0]["time"]:], "file_absolute_path": path})
+            else:
+                path = self.path + "_01." + self.extension
+                self.parts.append({"file": self.audio_file[:self.times[0]["time"]], "file_absolute_path": path})
+                path = self.path + "_02." + self.extension
+                self.parts.append({"file": self.audio_file[self.times[0]["time"]:], "file_absolute_path": path})
 
     def __create_audio_base_path(self):
         path = self.audio_path[::-1][self.audio_path[::-1].find(".")+1:]
         extension = self.audio_path[::-1][:self.audio_path[::-1].find(".")]
         self.extension = extension[::-1]
         self.path = path[::-1]
+        self.base_path = path[path.find("/"):][::-1]
 
     def __save_parts(self):
         for part in self.parts:

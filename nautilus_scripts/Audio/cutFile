@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Define log file
+LOGFILE=~/cut_audio_file.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Start of script log
+log "Script started"
+(
+  for file in "$@"; do
+    abs_file=$(get_absolute_path "$file")
+
+    # Prompt for the first parameter
+    param=$(zenity --entry --title="Enter a comma separated list of times" --text="Example of valid time: 6.23 = 6min and 23 seconds")
+    if [ $? -ne 0 ]; then
+      log "times list input cancelled"
+      zenity --error --text="Operation cancelled."
+      exit 1
+    fi
+
+    # Log the parameters and the file
+    log "Transcripting audio file $abs_file "
+
+    # Launch the Python script with the file path and parameters
+    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/CutAudio.py -f "$abs_file" -t "$param" >> "$LOGFILE" 2>&1
+  done
+  echo "# Transcription done for $file"
+) | zenity --progress --title="Cut Audio File $file" --text="On-going process..." --auto-close
+
+log "Script ended"
