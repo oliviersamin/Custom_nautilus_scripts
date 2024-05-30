@@ -3,6 +3,7 @@ Scripts to customize nautilus with to perform actions on files (PDF, audio...)
 
 ### needed modules (not in a virtual env)
 
+
 ### Nautilus scripts:
 
 The scripts inside this repo are meant to be in the following repo: `~/.local/share/nautilus/scripts/`  
