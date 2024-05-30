@@ -52,7 +52,7 @@ for file in "$@"; do
   log "Processing video file: $abs_file with parameters: $param1, $param2 & $param3"
 
   # Launch the Python script with the file path and parameters
-  python3 /home/olivier/Documents/Projects/Fuerte/modules/Videos/CutVideos.py -v "$abs_file" -n "$param1" -s "$param2" -e "$param3" >> "$LOGFILE" 2>&1
+  python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Video/CutVideos.py -v "$abs_file" -n "$param1" -s "$param2" -e "$param3" >> "$LOGFILE" 2>&1
 done
 
 # End of script log

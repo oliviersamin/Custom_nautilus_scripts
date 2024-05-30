@@ -35,7 +35,7 @@ log "Script started"
     log "Translating audio file $abs_file "
 
     # Launch the Python script with the file path and parameters
-    python3 ~/Documents/Projects/LLM/audio/scripts.py -a translation -f "$abs_file" >> "$LOGFILE" 2>&1
+    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a translation -f "$abs_file" >> "$LOGFILE" 2>&1
   done
 
   echo "100"

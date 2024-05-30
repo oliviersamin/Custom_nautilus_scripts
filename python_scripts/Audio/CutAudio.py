@@ -30,6 +30,7 @@ class CutAudioInSeveralParts:
         self.audio_path = self.args.audio
         self.time_to_cut = self.args.time
 
+
     def __create_parts(self):
         """
         transform the self.time_to_cut into list and then create a dictionnary with the corresponding audio
