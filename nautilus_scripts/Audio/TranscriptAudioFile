@@ -14,18 +14,42 @@ get_absolute_path() {
   echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
 }
 
+# Function to check if duration of MP3 file is less than 120 seconds
+is_duration_less_than_120() {
+    local file="$1"
+    local duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$file")
+    if [ $? -eq 0 ]; then
+        # Check if duration is less than 120 seconds
+        if (( $(echo "$duration < 120" | bc -l) )); then
+            echo true
+        else
+            echo false
+        fi
+    else
+        echo "Error: Failed to get duration of $file" >&2
+        exit 1
+    fi
+}
+
 # Start of script log
 log "Script started"
+
+# Check if duration is less than 120 seconds
+mp3_file="$1"
+log "is duration ok: $(is_duration_less_than_120 "$mp3_file")"
+if ! $(is_duration_less_than_120 "$mp3_file"); then
+    zenity --error --text="Error: The duration of the MP3 file is not less than 120 seconds." --title="Error"
+    log "Error: The duration of the MP3 file is not less than 120 seconds."
+    exit 1
+fi
+# Progress bar
 (
-  # Progress bar
-  echo "00"
   echo "# Starting the virtual env corresponding..."
   # activating virtual env corresponding to this script
   source ~/Documents/Projects/LLM/audio/env/bin/activate
 
 
   # Simulate processing step 2
-  echo "10"
   echo "# Starting the transcription process, it might take a few minutes..."
   # Loop through all selected files
   for file in "$@"; do
@@ -38,7 +62,6 @@ log "Script started"
     python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a transcription -f "$abs_file" >> "$LOGFILE" 2>&1
   done
 
-  echo "100"
   echo "# Transcription done for $file"
 ) | zenity --progress --title="Transcripting Audio File" --text="Initializing..." --percentage=0 --auto-close --no-cancel
 

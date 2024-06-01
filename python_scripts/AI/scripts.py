@@ -1,5 +1,14 @@
+"""
+After quick tests on audio files, the maximum amount of time the model openai/whisper-large-v3 on 2024/06/01 can transcript
+is above 2 minutes and a little bit less of 3 minutes. To take a margin, let's say that we must have 2 minutes audio files
+"""
+
+
 import argparse
 from transformers import pipeline
+
+
+DURATION_LIMIT = 2 * 60
 
 
 class BaseModel:
@@ -57,6 +66,7 @@ class BaseModel:
 
     def create_output(self):
         self.output_data = self.pipe(self.input_file)["text"]
+
 
     def run(self):
         self.set_output_file()
