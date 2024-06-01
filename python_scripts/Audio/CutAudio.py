@@ -89,7 +89,7 @@ class CutAudioInSeveralParts:
                 print("." * 200)
                 print(index, time)
                 if not time["label"]:
-                    path = os.path.join(self.path, "_extract_", str(index + 1) + "." + self.extension)
+                    path = self.path + "_extract_" + str(index + 1) + "." + self.extension
                 else:
                     path = os.path.join(self.base_path, time["label"] + "." + self.extension)
                 file = None

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Define log file
+LOGFILE=~/video_transcript_or_translate.log
+
+# Log function
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
+}
+
+# Function to get absolute path of a file
+get_absolute_path() {
+  local file="$1"
+  echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+# Start of script log
+log "Script started"
+
+# Ask user for the action to perform
+param1=$(zenity --list --title="Action to perform" --text="Choose the action:" --radiolist --column="Select" --column="Action" TRUE "translation" FALSE "transcription")
+
+# Loop through all selected files
+for file in "$@"; do
+  abs_file=$(get_absolute_path "$file")
+  abs_audio_file="${abs_file%.*}.mp3"
+  # Log the parameters and the file
+  log "Processing video file: $abs_file with parameter: $param1"
+  log "audio file = $abs_audio_file"
+  # Launch Step 1: convert video into mp3
+  python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Video/VideoToAudio.py -v "$abs_file" >> "$LOGFILE" 2>&1
+
+  # Launch Step 2: transcription / translation of audio file
+    # activating virtual env corresponding to this script
+  source ~/Documents/Projects/LLM/audio/env/bin/activate
+  python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a "$param1" -f "$abs_audio_file" >> "$LOGFILE" 2>&1
+done
+
+# End of script log
+log "Script ended"

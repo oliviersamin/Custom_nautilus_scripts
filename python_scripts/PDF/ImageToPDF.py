@@ -5,14 +5,9 @@ Created on Thu Jan  7 22:33:58 2021
 
 @author: oliviersamin
 """
-from PyPDF2 import PdfFileMerger
-import sys
 import os
-from PyPDF2 import PdfFileReader
-from fpdf import FPDF
 import img2pdf
 from PIL import Image
-import pdfkit
 import argparse
 
 
