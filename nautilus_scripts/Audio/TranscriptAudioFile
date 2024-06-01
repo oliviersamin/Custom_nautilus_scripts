@@ -42,6 +42,10 @@ if ! $(is_duration_less_than_120 "$mp3_file"); then
     log "Error: The duration of the MP3 file is not less than 120 seconds."
     exit 1
 fi
+
+# Ask user for the action to perform
+action=$(zenity --list --title="Action to perform" --text="Choose the action:" --radiolist --column="Select" --column="Action" --column="Help" TRUE "translation" "Translation into english only" FALSE "transcription" "Transcription with automatic language detection")
+
 # Progress bar
 (
   echo "# Starting the virtual env corresponding..."
@@ -50,19 +54,19 @@ fi
 
 
   # Simulate processing step 2
-  echo "# Starting the transcription process, it might take a few minutes..."
+  echo "# Starting the transcription/translation process, it might take a few minutes..."
   # Loop through all selected files
   for file in "$@"; do
     abs_file=$(get_absolute_path "$file")
 
     # Log the parameters and the file
-    log "Transcripting audio file $abs_file "
+    log "Transcripting/translating audio file $abs_file "
 
     # Launch the Python script with the file path and parameters
-    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a transcription -f "$abs_file" >> "$LOGFILE" 2>&1
+    python3 ~/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a "$action" -f "$abs_file" >> "$LOGFILE" 2>&1
   done
 
-  echo "# Transcription done for $file"
-) | zenity --progress --title="Transcripting Audio File" --text="Initializing..." --percentage=0 --auto-close --no-cancel
+  echo "# Transcription/Translation done for $file"
+) | zenity --progress --title="Transcripting/Translating Audio File" --text="Starting..." --percentage=0 --auto-close --no-cancel
 
 log "Script ended"
