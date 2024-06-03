@@ -1,8 +1,8 @@
 # Custom_nautilus_scripts
 Scripts to customize nautilus with to perform actions on files (PDF, audio...)
 
-### needed modules (not in a virtual env)
-
+### needed modules (in a virtual env to run the AI scripts)
+use the requirements.txt file and change in the nautilus scripts the virtual env originally from LLM folder (another folder from another project)
 
 ### Nautilus scripts:
 
