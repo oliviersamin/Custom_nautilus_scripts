@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Define log file
+LOG_FILE="$HOME/progress_script.log"
+
+# Function to log messages
+log_message() {
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - $1" >> "$LOG_FILE"
+}
+
+# Function to display the progress dialog
+show_progress() {
+    step1="Step 1: Initializing..."
+    step2="Step 2: Processing..."
+    step3="Step 3: Finalizing..."
+    step4="Step 4: Complete"
+
+    steps=("$step1" "$step2" "$step3" "$step4")
+
+    log_message "Displaying steps"
+
+    {
+        for i in "${!steps[@]}"; do
+            echo "# ${steps[$i]}"
+            log_message "${steps[$i]}"
+            sleep 1
+            echo "$(( (i + 1) * 25 ))"
+        done
+    } | zenity --progress --title="Progress" --width=300 --height=200 2>>"$LOG_FILE"
+
+}
+
+# Log script start
+log_message "Script started"
+
+# Execute the function
+show_progress
+
+# Log script end
+log_message "Script ended"
