@@ -82,18 +82,13 @@ class CutAudioInSeveralParts:
         # Get all the times as integer and sorted
         self.times = self.__set_times_and_labels()
         self.times = sorted(self.times, key=lambda x: x["time"])
-        print("-" * 200)
-        print(self.times)
         if len(self.times) > 1:
             for index, time in enumerate(self.times):
-                print("." * 200)
-                print(index, time)
                 if not time["label"]:
                     path = self.path + "_extract_" + str(index + 1) + "." + self.extension
                 else:
                     path = os.path.join(self.base_path, time["label"] + "." + self.extension)
                 file = None
-                print(path)
                 if index == 0:
                     file = self.audio_file[:time["time"]]
                 elif index < len(self.times) - 1:
@@ -140,8 +135,12 @@ class CutAudioInSeveralParts:
         self.base_path = path[path.find("/"):][::-1]
 
     def __save_parts(self):
-        for part in self.parts:
-            part['file'].export(part['file_absolute_path'], format=self.extension)
+        if self.parts:
+            for part in self.parts:
+                part['file'].export(part['file_absolute_path'], format=self.extension)
+            print("-" * 20 + " {}".format([self.audio_path] + [part['file_absolute_path'] for part in self.parts]))
+        else:
+            print("-" * 20 + " {}".format([self.audio_path]))
 
     def start(self):
         self.__create_audio_base_path()

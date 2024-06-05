@@ -67,6 +67,6 @@ action=$(zenity --list --title="Action to perform" --text="Choose the action:" -
   done
 
   echo "# Transcription/Translation done for $file"
-) | zenity --progress --title="Transcripting/Translating Audio File" --text="Starting..." --percentage=0 --auto-close --no-cancel
+) | zenity --progress --title="Transcripting/Translating Audio File" --text="Starting..." --percentage=0 --auto-close
 
 log "Script ended"

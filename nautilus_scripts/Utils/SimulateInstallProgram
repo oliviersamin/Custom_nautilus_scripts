@@ -8,14 +8,62 @@ log_message() {
     echo "$(date +"%Y-%m-%d %H:%M:%S") - $1" >> "$LOG_FILE"
 }
 
+# Function to get absolute path of a file
+get_absolute_path() {
+    local file="$1"
+    echo "$(cd "$(dirname "$file")"; pwd)/$(basename "$file")"
+}
+
+VIDEO_DURATION=""
+CUT_AUDIO_FILES=""
+
+# Function for Step 1: Convert video to mp3
+step1() {
+    local file="$1"
+    abs_file=$(get_absolute_path "$file")
+    abs_audio_file="${abs_file%.*}.mp3"
+    VIDEO_DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$abs_file")
+    VIDEO_DURATION=${VIDEO_DURATION%.*}
+    log_message "Step 1: Converting video file to mp3: $abs_file"
+    python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Video/VideoToAudio.py -v "$abs_file" >> "$LOG_FILE" 2>&1
+    if [ $? -ne 0 ]; then
+        log_message "Step 1: Error converting video file"
+        exit 1
+    fi
+    log_message "Step 1: Completed"
+}
+
+step2() {
+    CUT_AUDIO_FILES=$(python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/automatic_cut_audio_file.py -d "$VIDEO_DURATION" -f "$abs_audio_file" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        log_message "Step 2: Error during cut audio"
+        exit 1
+    fi
+    log_message "Step 2: Completed"
+    CUT_AUDIO_FILES=$(echo "$CUT_AUDIO_FILES" | sed -n 's/.*-\{20\} //p')
+    CUT_AUDIO_FILES=$(echo "$CUT_AUDIO_FILES" | sed -e 's/[][]//g' -e "s/'//g" -e 's/, */,/g')
+}
+
+# Function for Step 3: Transcription / Translation
+step3() {
+    local param="$1"
+
+    log_message "Step 3: Performing $param on audio files: $CUT_AUDIO_FILES"
+    source ~/Documents/Projects/LLM/audio/env/bin/activate
+    IFS=',' read -ra audio_files <<< "$CUT_AUDIO_FILES"
+    for cut_audio_file in "${audio_files[@]}"; do
+        python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a "$param" -f "$cut_audio_file" >> "$LOG_FILE" 2>&1
+        if [ $? -ne 0 ]; then
+            log_message "Step 3: Error during $param for file $cut_audio_file. The audio file might be too short to translate / empty"
+            exit 1
+        fi
+    done
+    log_message "Step 3: Completed"
+}
+
 # Function to display the progress dialog
 show_progress() {
-    step1="Step 1: Initializing..."
-    step2="Step 2: Processing..."
-    step3="Step 3: Finalizing..."
-    step4="Step 4: Complete"
-
-    steps=("$step1" "$step2" "$step3" "$step4")
+    steps=("Step 1/3: Converting video to mp3..." "Step 2/3: Cut audio file if needed..." "Step 3/3: Transcript/Translate audio files")
 
     log_message "Displaying steps"
 
@@ -23,18 +71,41 @@ show_progress() {
         for i in "${!steps[@]}"; do
             echo "# ${steps[$i]}"
             log_message "${steps[$i]}"
-            sleep 1
             echo "$(( (i + 1) * 25 ))"
-        done
-    } | zenity --progress --title="Progress" --width=300 --height=200 2>>"$LOG_FILE"
 
+            case $i in
+                0) step1 "$file" ;;
+                1) step2 ;;
+                2) step3 "$param1" ;;
+            esac
+        done
+    } | zenity --progress --title="Progress" --width=300 --height=200 --auto-close --text="Initializing..." 2>>"$LOG_FILE"
+
+    if [ $? -eq 0 ]; then
+        log_message "Process completed"
+        zenity --info --width=300 --height=200 --text="All steps are completed. Click OK to close." --title="Process Completed" 2>>"$LOG_FILE"
+    else
+        log_message "Process interrupted or canceled"
+    fi
 }
 
 # Log script start
 log_message "Script started"
 
-# Execute the function
-show_progress
+# Ask user for the action to perform
+param1=$(zenity --list --title="Action to perform" --text="Choose the action:" --radiolist --column="Select" --column="Action" TRUE "translation" FALSE "transcription")
+
+# Loop through all selected files
+for file in "$@"; do
+    abs_file=$(get_absolute_path "$file")
+    abs_audio_file="${abs_file%.*}.mp3"
+    # Log the parameters and the file
+    log_message "Processing video file: $abs_file with parameter: $param1"
+    log_message "audio file = $abs_audio_file"
+
+    # Execute the function
+    show_progress
+done
 
 # Log script end
 log_message "Script ended"

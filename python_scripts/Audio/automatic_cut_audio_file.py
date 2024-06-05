@@ -17,6 +17,7 @@ class AutomaticCut:
         self.duration = 0
         self.__parse_arguments()
         self.set_times_attributes()
+        self.files_path = []
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser(description="Cut an audiofile into several parts that does not exceed"
@@ -35,23 +36,25 @@ class AutomaticCut:
             total_number = self.duration // MAX_DURATION
             if self.duration % MAX_DURATION:
                 total_number += 1
-            print("total_number = ", total_number)
             self.times = [str(i + 1 * MAX_DURATION) for i in range(total_number) if i + 1 < total_number]
             self.times = ",".join(self.times)
 
     def run(self):
-        command = [
-            'python3',
-            '/home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/CutAudio.py',
-            '-f',
-            self.file_path,
-            '-t',
-            self.times,
-        ]
-        print(command)
-        data = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = data.communicate()
-        print(stdout, stderr)
+        if self.times:
+            command = [
+                'python3',
+                '/home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/CutAudio.py',
+                '-f',
+                self.file_path,
+                '-t',
+                self.times,
+            ]
+            print(command)
+            data = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = data.communicate()
+            print(stdout, stderr)
+        else:
+            print("-" * 20 + " {}".format(self.file_path))
 
 
 if __name__ == "__main__":
