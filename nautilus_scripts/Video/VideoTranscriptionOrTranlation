@@ -16,6 +16,7 @@ get_absolute_path() {
 
 VIDEO_DURATION=""
 CUT_AUDIO_FILES=""
+TXT_FILES=""
 
 # Function for Step 1: Convert video to mp3
 step1() {
@@ -61,6 +62,21 @@ step3() {
     log_message "Step 3: Completed"
 }
 
+
+step4() {
+    log_message "Step 4: Concatenate $TXT_FILES into one"
+    IFS=',' read -ra txt_files <<< "$TXT_FILES"
+    for txt_file in "${txt_files[@]}"; do
+        python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/concatenate_text_files.py -a "$param" -f "$cut_audio_file" >> "$LOG_FILE" 2>&1
+        if [ $? -ne 0 ]; then
+            log_message "Step 4: Error during $param for file $cut_audio_file. The audio file might be too short to translate / empty"
+            exit 1
+        fi
+    done
+    log_message "Step 4: Completed"
+}
+
+
 # Function to display the progress dialog
 show_progress() {
     steps=("Step 1/3: Converting video to mp3..." "Step 2/3: Cut audio file if needed..." "Step 3/3: Transcript/Translate audio files")
@@ -77,6 +93,7 @@ show_progress() {
                 0) step1 "$file" ;;
                 1) step2 ;;
                 2) step3 "$param1" ;;
+                3) step4  ;;
             esac
         done
     } | zenity --progress --title="Progress" --width=300 --height=200 --auto-close --text="Initializing..." 2>>"$LOG_FILE"
