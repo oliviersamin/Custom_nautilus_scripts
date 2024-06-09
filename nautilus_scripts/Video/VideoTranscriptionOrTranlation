@@ -107,11 +107,11 @@ show_progress() {
                 3) step4  ;;
             esac
         done
-    } | zenity --progress --title="Progress" --width=300 --height=200 --auto-close --text="Initializing..." 2>>"$LOG_FILE"
+    } | zenity --progress --title="Progress" --width=500 --height=150 --auto-close --text="Initializing..." 2>>"$LOG_FILE"
 
     if [ $? -eq 0 ]; then
         log_message "Process completed"
-        zenity --info --width=300 --height=200 --text="All steps are completed. Click OK to close." --title="Process Completed" 2>>"$LOG_FILE"
+        zenity --info --width=500 --height=150 --text="All steps are completed. Click OK to close." --title="Process Completed" 2>>"$LOG_FILE"
     else
         log_message "Process interrupted or canceled"
     fi
@@ -121,7 +121,7 @@ show_progress() {
 log_message "Script started"
 
 # Ask user for the action to perform
-param1=$(zenity --list --title="Action to perform" --text="Choose the action:" --radiolist --column="Select" --column="Action" TRUE "translation" FALSE "transcription")
+param1=$(zenity --list --title="Action to perform" --text="Choose the action:" --radiolist --column="Select" --column="Action" FALSE "translation into english" TRUE "transcription")
 
 # Loop through all selected files
 for file in "$@"; do

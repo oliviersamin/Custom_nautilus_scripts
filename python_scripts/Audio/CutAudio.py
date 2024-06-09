@@ -17,6 +17,7 @@ class CutAudioInSeveralParts:
         self.path = ""
         self.base_path = ""
         self.extension = ""
+        self.temporary_directory = ""
         self.__parse_arguments()
         self.audio_file = AudioSegment.from_file(self.audio_path)
         self.parts = []
@@ -28,10 +29,13 @@ class CutAudioInSeveralParts:
                             help="Enter the absolute path of the audio to cut (with its extension)")
         parser.add_argument("-t", "--time", required=True, type=str,
                             help="a list separated coma of times expressed in minutes. Example 6.23 = 6minutes and 23 sec")
+        parser.add_argument("-td", "--temp_dir", required=False, type=str, default="",
+                            help="temporary directory absolute path")
         self.args = parser.parse_args()
         self.audio_path = self.args.audio
         self.time_to_cut = self.args.time
         self.times = []
+        self.temporary_directory = self.args.temp_dir
 
     def __set_times_and_labels(self):
         """
@@ -131,8 +135,13 @@ class CutAudioInSeveralParts:
         path = self.audio_path[::-1][self.audio_path[::-1].find(".")+1:]
         extension = self.audio_path[::-1][:self.audio_path[::-1].find(".")]
         self.extension = extension[::-1]
-        self.path = path[::-1]
-        self.base_path = path[path.find("/"):][::-1]
+        if not self.temporary_directory:
+            self.path = path[::-1]
+            self.base_path = path[path.find("/"):][::-1]
+        else:
+            self.base_path = self.temporary_directory
+            self.path = os.path.join(self.base_path, self.audio_path[::-1][self.audio_path[::-1].find(".")+1:self.audio_path[::-1].find("/")][::-1])
+            print("INSIDE ELSE {} -- {}".format(self.base_path, self.path))
 
     def __save_parts(self):
         if self.parts:

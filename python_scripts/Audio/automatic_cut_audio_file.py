@@ -4,6 +4,7 @@ Automatic cut an audio file that esceed the max duration of 120 seconds to be tr
 
 import argparse
 import subprocess
+import os
 
 
 MAX_DURATION = 14 # number of seconds for tests purpose only
@@ -16,6 +17,7 @@ class AutomaticCut:
         self.file_path = ""
         self.times = []
         self.duration = 0
+        self.temporary_directory = ""
         self.__parse_arguments()
         self.set_times_attributes()
         self.files_path = []
@@ -31,6 +33,8 @@ class AutomaticCut:
         self.args = parser.parse_args()
         self.duration = int(self.args.duration)
         self.file_path = self.args.audio
+        self.temporary_directory = os.path.join(self.file_path[::-1][self.file_path[::-1].find("/") + 1:][::-1], "temp")
+        print("temp folder = ", self.temporary_directory)
 
     def set_times_attributes(self):
         if self.duration > MAX_DURATION:
@@ -46,6 +50,7 @@ class AutomaticCut:
 
     def run(self):
         if self.times:
+            os.mkdir(self.temporary_directory)
             command = [
                 'python3',
                 '/home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/CutAudio.py',
@@ -53,6 +58,8 @@ class AutomaticCut:
                 self.file_path,
                 '-t',
                 self.times,
+                '-td',
+                self.temporary_directory
             ]
             print("command = ", command)
             data = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
