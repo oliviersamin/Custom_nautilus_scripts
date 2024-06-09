@@ -41,6 +41,7 @@ step2() {
         exit 1
     fi
     log_message "Step 2: Completed"
+    log_message "log = $CUT_AUDIO_FILES"
     CUT_AUDIO_FILES=$(echo "$CUT_AUDIO_FILES" | sed -n 's/.*-\{20\} //p')
     CUT_AUDIO_FILES=$(echo "$CUT_AUDIO_FILES" | sed -e 's/[][]//g' -e "s/'//g" -e 's/, */,/g')
 }
@@ -52,34 +53,44 @@ step3() {
     log_message "Step 3: Performing $param on audio files: $CUT_AUDIO_FILES"
     source ~/Documents/Projects/LLM/audio/env/bin/activate
     IFS=',' read -ra audio_files <<< "$CUT_AUDIO_FILES"
+
     for cut_audio_file in "${audio_files[@]}"; do
-        python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a "$param" -f "$cut_audio_file" >> "$LOG_FILE" 2>&1
+        TXT_FILE=$(python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/AI/scripts.py -a "$param" -f "$cut_audio_file" 2>/dev/null)
         if [ $? -ne 0 ]; then
             log_message "Step 3: Error during $param for file $cut_audio_file. The audio file might be too short to translate / empty"
-            exit 1
+            continue
+        fi
+        # Append the value of TXT_FILE to the global variable TXT_FILES
+        TXT_FILE=$(echo "$TXT_FILE" | sed -n 's/.*-\{20\} //p')
+        TXT_FILE=$(echo "$TXT_FILE" | sed -e 's/[][]//g' -e "s/'//g" -e 's/, */,/g')
+        if [ -n "$TXT_FILE" ]; then
+            if [ -z "$TXT_FILES" ]; then
+                TXT_FILES="$TXT_FILE"
+            else
+                TXT_FILES="$TXT_FILES,$TXT_FILE"
+            fi
+            log_message "Added $TXT_FILE to TXT_FILES"
+        else
+            log_message "TXT_FILE is empty, skipping."
         fi
     done
     log_message "Step 3: Completed"
 }
 
-
 step4() {
     log_message "Step 4: Concatenate $TXT_FILES into one"
-    IFS=',' read -ra txt_files <<< "$TXT_FILES"
-    for txt_file in "${txt_files[@]}"; do
-        python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/concatenate_text_files.py -a "$param" -f "$cut_audio_file" >> "$LOG_FILE" 2>&1
-        if [ $? -ne 0 ]; then
-            log_message "Step 4: Error during $param for file $cut_audio_file. The audio file might be too short to translate / empty"
-            exit 1
-        fi
-    done
+    python3 /home/olivier/Documents/Projects/nautilus/Custom_nautilus_scripts/python_scripts/Audio/concatenate_text_files.py -f "$TXT_FILES" >> "$LOG_FILE" 2>&1
+    if [ $? -ne 0 ]; then
+        log_message "Step 4: Error during concatenate files $TXT_FILES"
+        exit 1
+    fi
     log_message "Step 4: Completed"
 }
 
 
 # Function to display the progress dialog
 show_progress() {
-    steps=("Step 1/3: Converting video to mp3..." "Step 2/3: Cut audio file if needed..." "Step 3/3: Transcript/Translate audio files")
+    steps=("Step 1/4: Converting video to mp3..." "Step 2/4: Cuting audio file if needed..." "Step 3/4: Transcripting/Translating audio files" "Step 4/4: Concatenating txt files")
 
     log_message "Displaying steps"
 

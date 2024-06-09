@@ -6,7 +6,8 @@ import argparse
 import subprocess
 
 
-MAX_DURATION = 120  # number of seconds the actual AI model can transcript without cutting the message
+MAX_DURATION = 14 # number of seconds for tests purpose only
+# MAX_DURATION = 120  # number of seconds the actual AI model can transcript without cutting the message
 
 
 class AutomaticCut:
@@ -36,7 +37,11 @@ class AutomaticCut:
             total_number = self.duration // MAX_DURATION
             if self.duration % MAX_DURATION:
                 total_number += 1
-            self.times = [str(i + 1 * MAX_DURATION) for i in range(total_number) if i + 1 < total_number]
+            for i in range(total_number):
+                if i + 1 < total_number:
+                    time = (i + 1) * MAX_DURATION
+                    time = str(time // 60) + "." + str(time % 60)
+                    self.times.append(str(time))
             self.times = ",".join(self.times)
 
     def run(self):
@@ -49,7 +54,7 @@ class AutomaticCut:
                 '-t',
                 self.times,
             ]
-            print(command)
+            print("command = ", command)
             data = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = data.communicate()
             print(stdout, stderr)

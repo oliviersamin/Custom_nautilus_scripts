@@ -10,6 +10,7 @@ def _set_output_file_name(input_files):
     """
     return input_files[0][:input_files[0].find(".")] + "_all.txt"
 
+
 def concatenate_files(input_files):
     output_file = _set_output_file_name(input_files)
     print(output_file)

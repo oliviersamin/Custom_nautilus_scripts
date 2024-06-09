@@ -60,6 +60,7 @@ class BaseModel:
     def save_into_output_file(self):
         with open(self.output_file, "w") as file:
             file.write(self.output_data)
+        print("-" * 20 + " {}".format(self.output_file))
 
     def set_pipeline(self):
         self.pipe = pipeline(self.action, model=self.model)

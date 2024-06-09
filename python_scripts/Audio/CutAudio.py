@@ -138,7 +138,7 @@ class CutAudioInSeveralParts:
         if self.parts:
             for part in self.parts:
                 part['file'].export(part['file_absolute_path'], format=self.extension)
-            print("-" * 20 + " {}".format([self.audio_path] + [part['file_absolute_path'] for part in self.parts]))
+            print("-" * 20 + " {}".format([part['file_absolute_path'] for part in self.parts]))
         else:
             print("-" * 20 + " {}".format([self.audio_path]))
 
